@@ -18,6 +18,14 @@ def check_expired(soup):
     return True
 
 def crawl_document(url, output_folder):
+    Id = url.split("ID=")[-1]
+    
+    filename = f"{Id}.json"
+    filepath = os.path.join(output_folder, filename)
+    if os.path.exists(filepath):
+        print(f"Document {filename} already exists. Skipping download.")
+        return
+    
     soup = BeautifulSoup(requests.get(url).content, "html.parser")
     
     if soup.find("div", class_="toanvancontent") is None:
@@ -28,13 +36,7 @@ def crawl_document(url, output_folder):
         print(f"Document at {url} is expired. Skipping download.")
         return
     
-    Id = url.split("ID=")[-1]
     
-    filename = f"{Id}.json"
-    filepath = os.path.join(output_folder, filename)
-    if os.path.exists(filepath):
-        print(f"Document {filename} already exists. Skipping download.")
-        return
     
     content_div = soup.find("div", class_="toanvancontent")
     # From paragraphs inside content_div, extract text
