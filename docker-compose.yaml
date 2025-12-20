@@ -9,7 +9,9 @@ services:
 
   # The React Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: DOCKERFILE
     ports:
       - "5173:5173"
     volumes:
