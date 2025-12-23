@@ -1,6 +1,5 @@
 # Python generated files
 __pycache__/
-*.json 
 *.pyc
 *.py[oc]
 build/
