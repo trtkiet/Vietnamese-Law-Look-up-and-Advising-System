@@ -58,44 +58,114 @@ export const ChatPage: React.FC = () => {
     navigate(`/lookup?${params.toString()}`);
   };
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change or loading state changes
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
+
+  // Auto-focus input after sending message
+  useEffect(() => {
+    if (!isLoading && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isLoading]);
+
+  // Send message to API
+  const sendMessageToAPI = useCallback(async (messageText: string) => {
+    setIsLoading(true);
+    setLastFailedMessage(null);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
+      const response = await fetch(CHAT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageText }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorType = response.status >= 500 ? 'server' : 'unknown';
+        const errorMessage = response.status === 500
+          ? 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
+          : response.status === 503
+          ? 'Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.'
+          : `Có lỗi xảy ra (mã lỗi: ${response.status}). Vui lòng thử lại.`;
+
+        setLastFailedMessage(messageText);
+        setMessages(prev => [...prev, {
+          role: 'ai',
+          text: errorMessage,
+          isError: true,
+          errorType
+        }]);
+        return;
+      }
+
+      const data = (await response.json()) as ChatApiResponse;
+      const reply = data.reply ?? data.answer ?? 'Hiện không có phản hồi từ hệ thống.';
+      const sources = data.sources ?? [];
+
+      setMessages(prev => [...prev, { role: 'ai', text: reply, sources: sources }]);
+    } catch (error) {
+      let errorMessage = 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
+      let errorType: 'network' | 'server' | 'unknown' = 'unknown';
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'Yêu cầu đã hết thời gian chờ. Vui lòng thử lại.';
+          errorType = 'network';
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+          errorType = 'network';
+        }
+      }
+
+      setLastFailedMessage(messageText);
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: errorMessage,
+        isError: true,
+        errorType
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!composer.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', text: composer };
+    const messageText = composer.trim();
+    const userMessage: ExtendedMessage = { role: 'user', text: messageText };
     setMessages(prev => [...prev, userMessage]);
     setComposer('');
-    setIsLoading(true);
 
-    try {
-      const response = await fetch(CHAT_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage.text }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`);
-      }
-
-      const data = (await response.json()) as ChatApiResponse;
-      const reply = data.reply ?? data.answer ?? 'Hiện không có phản hồi.';
-      const sources = data.sources ?? [];
-
-      setMessages(prev => [...prev, { role: 'ai', text: reply, sources: sources }]);
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', text: 'Lỗi kết nối máy chủ.' }]);
-    } finally {
-      setIsLoading(false);
-    }
+    await sendMessageToAPI(messageText);
   };
+
+  // Retry failed message
+  const handleRetry = useCallback(() => {
+    if (!lastFailedMessage || isLoading) return;
+
+    // Remove the last error message
+    setMessages(prev => {
+      const newMessages = [...prev];
+      if (newMessages.length > 0 && newMessages[newMessages.length - 1].isError) {
+        newMessages.pop();
+      }
+      return newMessages;
+    });
+
+    sendMessageToAPI(lastFailedMessage);
+  }, [lastFailedMessage, isLoading, sendMessageToAPI]);
 
   return (
     <div className="flex h-screen bg-white text-slate-800 font-sans">
@@ -136,28 +206,46 @@ export const ChatPage: React.FC = () => {
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'ai' && (
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0">
-                    AI
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0 ${
+                    msg.isError ? 'bg-red-500' : 'bg-blue-600'
+                  }`}>
+                    {msg.isError ? '!' : 'AI'}
                   </div>
                 )}
-                
+
                 <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                   <div className={`prose prose-slate max-w-none rounded-2xl px-5 py-3 ${
-                    msg.role === 'user' 
-                      ? 'bg-slate-100 text-slate-800 rounded-br-none' 
+                    msg.role === 'user'
+                      ? 'bg-slate-100 text-slate-800 rounded-br-none'
+                      : msg.isError
+                      ? 'bg-red-50 text-red-700 border border-red-200'
                       : 'bg-transparent text-slate-800 px-0 py-0'
                   }`}>
                     <ReactMarkdown>{msg.text}</ReactMarkdown>
                   </div>
 
+                  {/* Retry button for error messages */}
+                  {msg.isError && idx === messages.length - 1 && lastFailedMessage && (
+                    <button
+                      onClick={handleRetry}
+                      disabled={isLoading}
+                      className="mt-2 flex items-center gap-2 px-3 py-1.5 text-sm bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clipRule="evenodd" />
+                      </svg>
+                      Thử lại
+                    </button>
+                  )}
+
                   {/* Sources / Citations */}
-                  {msg.sources && msg.sources.length > 0 && (
+                  {msg.sources && msg.sources.length > 0 && !msg.isError && (
                     <div className="mt-4 space-y-2 w-full">
                       <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nguồn tham khảo</div>
                       <div className="grid grid-cols-1 gap-2">
                         {msg.sources.map((source, sIdx) => (
-                          <div 
-                            key={sIdx} 
+                          <div
+                            key={sIdx}
                             onClick={() => handleSourceClick(source)}
                             className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm hover:bg-slate-100 transition-colors cursor-pointer"
                           >
@@ -181,6 +269,9 @@ export const ChatPage: React.FC = () => {
                 </div>
               </div>
             ))}
+
+            {/* Typing indicator when loading */}
+            {isLoading && <TypingIndicator />}
           </div>
         </div>
 
