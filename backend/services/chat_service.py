@@ -1,23 +1,35 @@
 import logging
 from typing import Optional, Dict, List, Any
 
-from google import genai
-from qdrant_client import QdrantClient
-from sentence_transformers import SentenceTransformer
+# LangChain Imports
+from langchain_qdrant import QdrantVectorStore
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.chat_history import BaseChatMessageHistory
 
+# Client Imports
+from qdrant_client import QdrantClient
+
+# Config Import
 from core.config import config
 
 logger = logging.getLogger(__name__)
-
 
 class ChatService:  
     """Handle chat completion requests against Gemini with RAG."""
 
     def __init__(self) -> None:
-        self.client: Optional[genai.Client] = None
-        self.qdrant: Optional[QdrantClient] = None
-        self.embedder: Optional[SentenceTransformer] = None
+        self.vector_store: Optional[QdrantVectorStore] = None
+        self.model: Optional[ChatGoogleGenerativeAI] = None
         self._initialized = False
+        
+        # --- MEMORY SETUP ---
+        # For production, replace this dict with Redis or a Database
+        self.session_store: Dict[str, BaseChatMessageHistory] = {}
 
     def startup(self) -> None:
         """Initialize the Gemini client, Qdrant, and Embedding model."""
@@ -26,88 +38,117 @@ class ChatService:
 
         if not config.GEMINI_API_KEY:
             raise RuntimeError("GEMINI_API_KEY is not configured")
-
-        self.client = genai.Client(api_key=config.GEMINI_API_KEY)
         
-        # Initialize Qdrant
-        # Use 'qdrant' hostname if running in Docker, or 'localhost' if local
-        # We'll assume Docker for now based on the setup
+        # 1. Initialize Gemini
+        # NOTE: Parameter is 'google_api_key', not 'gemini_api_key'
+        self.model = ChatGoogleGenerativeAI(
+            model=config.MODEL,
+            google_api_key=config.GEMINI_API_KEY,
+            temperature=0.3 # Low temperature for factual RAG responses
+        )
+        
+        # 2. Initialize Qdrant & Embeddings
         try:
-            self.qdrant = QdrantClient(host="qdrant", port=config.QDRANT_PORT)
+            # We use QdrantClient to manage the connection
+            client = QdrantClient(host="qdrant", port=config.QDRANT_PORT)
+            
+            # We use LangChain's wrapper for the store
+            self.vector_store = QdrantVectorStore(
+                client=client,
+                collection_name=config.COLLECTION_NAME,
+                embedding=HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL_NAME)
+            )
+            logger.info("Connected to Qdrant successfully.")
         except Exception as e:
-            logger.warning(f"Could not connect to Qdrant: {e}")
-
-        # Initialize Embedding Model
-        try:
-            self.embedder = SentenceTransformer('minhquan6203/paraphrase-vietnamese-law')
-        except Exception as e:
-            logger.warning(f"Could not load embedding model: {e}")
+            logger.error(f"Could not connect to Qdrant: {e}")
+            # We might want to allow startup to finish without vector store 
+            # so the chat works (just without context)
+            self.vector_store = None
 
         self._initialized = True
         logger.info("ChatService initialized")
+        
+    def _get_session_history(self, session_id: str) -> BaseChatMessageHistory:
+        """Internal helper to retrieve chat history for a specific session."""
+        if session_id not in self.session_store:
+            self.session_store[session_id] = ChatMessageHistory()
+        return self.session_store[session_id]
 
-    def respond(self, query: str) -> Dict[str, Any]:
+    def respond(self, query: str, session_id: Optional[str] = "default") -> Dict[str, Any]:
+        """
+        1. Retrieve relevant documents from Qdrant.
+        2. Inject them into the prompt.
+        3. Get answer from Gemini.
+        """
         if not self._initialized:
             self.startup()
 
-        context_str = ""
-        sources = []
+        # 1. Retrieval Step
+        context_text = ""
+        source_documents = []
 
-        # RAG Step: Retrieve context if Qdrant and Embedder are ready
-        if self.qdrant and self.embedder:
+        if self.vector_store:
             try:
-                query_vector = self.embedder.encode(query).tolist()
-                search_results = self.qdrant.query_points(
-                    collection_name="laws",
-                    query=query_vector,
-                    limit=5
-                )
+                # Search for top 4 relevant chunks
+                docs = self.vector_store.similarity_search(query, k=4)
                 
-                # Access the points from the response
-                points = search_results.points if hasattr(search_results, 'points') else []
-                logger.info(f"Found {len(points)} search results")
+                # Format context for the LLM
+                context_text = "\n\n".join([d.page_content for d in docs])
                 
-                # Deduplicate articles to avoid repeating the same parent context
-                seen_articles = set()
-                context_parts = []
-                
-                for res in points:
-                    payload = res.payload
-                    article_id = f"{payload.get('law_id')}_{payload.get('article')}"
-                    
-                    # Add to sources list
-                    sources.append(payload)
-                    
-                    # Add to context (Parent Article Text)
-                    text_to_add = payload.get('source_text', payload.get('text', ''))
-                    
-                    if article_id not in seen_articles:
-                        context_parts.append(text_to_add)
-                        seen_articles.add(article_id)
-                
-                context_str = "\n\n".join(context_parts)
-                logger.info(f"RAG Context length: {len(context_str)} chars")
-                    
+                # Keep track of sources to return to the UI
+                source_documents = [d.metadata for d in docs]
             except Exception as e:
-                logger.error(f"RAG Retrieval failed: {e}")
+                logger.error(f"Error retrieving from Qdrant: {e}")
+                context_text = "No context available due to database error."
 
-        # Construct System Prompt
-        system_prompt = f"""
-You are a Vietnamese Legal Assistant. Use the following context to answer the user's question.
-If the answer is not in the context, state that you cannot find it in the provided documents.
-Cite the Article Number (e.g., [Điều 5 - Luật Lao động]) for every claim you make.
-
-CONTEXT:
-{context_str}
-"""
-
-        response = self.client.models.generate_content(
-            model=config.MODEL,
-            contents=[system_prompt, query],
-        )
+        # 2. Prompt Construction (Now with History!)
+        system_template = """You are a Vietnamese Legal Assistant. 
+        Answer the user's question using the provided context.
+        If the answer is not in the context, say so.
         
+        CONTEXT:
+        {context}"""
+
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", system_template),
+            MessagesPlaceholder(variable_name="history"), # <--- Memory injection point
+            ("human", "{question}")
+        ])
+
+        # 3. Create the Chain
+        chain = prompt_template | self.model | StrOutputParser()
+
+        # 4. Wrap Chain with Memory Management
+        chain_with_history = RunnableWithMessageHistory(
+            chain,
+            self._get_session_history, # Logic to get/create history
+            input_messages_key="question",
+            history_messages_key="history",
+        )
+
+        try:
+            # 5. Invoke with session_id config
+            response_text = chain_with_history.invoke(
+                {"context": context_text, "question": query},
+                config={"configurable": {"session_id": session_id}} # <--- Critical for memory
+            )
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+            return {
+                "answer": "Sorry, an error occurred.",
+                "sources": []
+            }
+
         return {
-            "reply": response.text,
-            "sources": sources
+            "answer": response_text,
+            "sources": source_documents
         }
+        
+            
+def main():
+    service = ChatService()
+    service.startup()
+    
+if __name__ == "__main__":
+    main()
 

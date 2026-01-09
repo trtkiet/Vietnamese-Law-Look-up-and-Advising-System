@@ -18,3 +18,5 @@ qdrant_data/
 *.ipynb
 *.rar
 .vs_code/
+.vscode
+data/

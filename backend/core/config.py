@@ -9,9 +9,13 @@ class Config(BaseSettings):
     SERVER_HOST: str = "http://localhost:8000"
     PROJECT_NAME: str = "vietnamese-law-api"
     GEMINI_API_KEY: str
-    MODEL: str = "gemini-2.5-flash"
+    MODEL: str = "gemini-2.5-flash-lite"
     QDRANT_PORT: int = 6333
     DOCS_ROOT: str = "./law_crawler/vbpl_documents"
+    COLLECTION_NAME: str = "laws"
+    EMBEDDING_MODEL_NAME: str = "Savoxism/vietnamese-legal-embedding-finetuned"
+    EMBEDDINGS_FILE: str = "data/embeddings.pkl"
+    DOCS_FILE: str = "data/documents.json"
 
     
 config = Config()

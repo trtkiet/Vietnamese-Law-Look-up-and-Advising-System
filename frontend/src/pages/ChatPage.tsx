@@ -37,6 +37,13 @@ const LoadingSpinner: React.FC = () => (
   </svg>
 );
 
+const generateSessionId = () => {
+  if (typeof self !== 'undefined' && self.crypto && self.crypto.randomUUID) {
+    return self.crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+};
+
 export const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ExtendedMessage[]>([
@@ -45,6 +52,7 @@ export const ChatPage: React.FC = () => {
   const [composer, setComposer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
+  const [sessionID, setSessionID] = useState<string>(generateSessionId());
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,10 +80,14 @@ export const ChatPage: React.FC = () => {
     }
   }, [isLoading]);
 
+  
+
   // Send message to API
   const sendMessageToAPI = useCallback(async (messageText: string) => {
     setIsLoading(true);
     setLastFailedMessage(null);
+
+    
 
     try {
       const controller = new AbortController();
@@ -84,7 +96,7 @@ export const ChatPage: React.FC = () => {
       const response = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText }),
+        body: JSON.stringify({ message: messageText , session_id: sessionID }),
         signal: controller.signal,
       });
 

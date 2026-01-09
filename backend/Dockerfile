@@ -8,20 +8,12 @@ WORKDIR /backend
 # Install runtime deps
 RUN python -m pip install --upgrade --no-cache-dir pip
 
-# Copy dependency metadata first for better layer caching
-# COPY pyproject.toml .
-
-# Install app requirements (no build tooling needed for current deps)
-RUN python -m pip install --no-cache-dir \
-	"fastapi[standard]" \
-	"google-genai" \
-	"httpx" \
-	"uvicorn"\
-	"qdrant-client" \
-	"sentence-transformers"
-
 # Copy backend source
 COPY . .
+
+# Install app requirements (no build tooling needed for current deps)
+RUN python -m pip install -r requirements.txt
+
 
 EXPOSE 8000
 

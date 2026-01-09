@@ -20,12 +20,12 @@ def get_chat_service() -> ChatService:
 async def chat(payload: ChatRequest, service: ChatService = Depends(get_chat_service)) -> ChatResponse:
     """Send a message to Gemini and return its reply."""
     try:
-        response_data = service.respond(payload.message)
+        response_data = service.respond(payload.message, session_id=payload.session_id)
     except Exception:
         logger.exception("Failed to handle chat request")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate response")
 
     return ChatResponse(
-        reply=response_data["reply"],
+        reply=response_data["answer"],
         sources=response_data.get("sources", [])
     )
