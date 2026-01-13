@@ -37,6 +37,8 @@ const LoadingSpinner: React.FC = () => (
   </svg>
 );
 
+const STORAGE_KEY = 'chat_state';
+
 const generateSessionId = () => {
   if (typeof self !== 'undefined' && self.crypto && self.crypto.randomUUID) {
     return self.crypto.randomUUID();
@@ -44,15 +46,30 @@ const generateSessionId = () => {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 };
 
+const getInitialState = () => {
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const { messages, sessionID } = JSON.parse(saved);
+      return { messages, sessionID };
+    }
+  } catch (e) {
+    console.error('Failed to load chat state:', e);
+  }
+  return {
+    messages: [{ role: 'ai', text: 'Chào bạn, tôi là trợ lý pháp luật ảo. Tôi có thể giúp gì cho bạn hôm nay?' }],
+    sessionID: generateSessionId()
+  };
+};
+
 export const ChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<ExtendedMessage[]>([
-    { role: 'ai', text: 'Chào bạn, tôi là trợ lý pháp luật ảo. Tôi có thể giúp gì cho bạn hôm nay?' }
-  ]);
+  const initialState = getInitialState();
+  const [messages, setMessages] = useState<ExtendedMessage[]>(initialState.messages);
   const [composer, setComposer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
-  const [sessionID, setSessionID] = useState<string>(generateSessionId());
+  const [sessionID] = useState<string>(initialState.sessionID);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +97,15 @@ export const ChatPage: React.FC = () => {
       console.error('Error searching document:', error);
     }
   };
+
+  // Save chat state to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, sessionID }));
+    } catch (e) {
+      console.error('Failed to save chat state:', e);
+    }
+  }, [messages, sessionID]);
 
   // Auto-scroll to bottom when messages change or loading state changes
   useEffect(() => {
@@ -178,6 +204,12 @@ export const ChatPage: React.FC = () => {
     await sendMessageToAPI(messageText);
   };
 
+  // Start new conversation
+  const handleNewConversation = useCallback(() => {
+    sessionStorage.removeItem(STORAGE_KEY);
+    window.location.reload();
+  }, []);
+
   // Retry failed message
   const handleRetry = useCallback(() => {
     if (!lastFailedMessage || isLoading) return;
@@ -199,7 +231,10 @@ export const ChatPage: React.FC = () => {
       {/* Sidebar */}
       <div className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col hidden md:flex">
         <div className="p-4">
-          <button className="flex items-center gap-2 px-4 py-3 bg-slate-200 hover:bg-slate-300 rounded-full text-sm font-medium transition-colors w-full text-slate-700">
+          <button
+            onClick={handleNewConversation}
+            className="flex items-center gap-2 px-4 py-3 bg-slate-200 hover:bg-slate-300 rounded-full text-sm font-medium transition-colors w-full text-slate-700"
+          >
             <span className="text-lg">+</span> Cuộc trò chuyện mới
           </button>
         </div>
