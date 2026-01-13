@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 load_dotenv()
 
+
 class Config(BaseSettings):
     APP_NAME: str = "Vietnamese Law API"
     API_STR: str = "/api/v1"
@@ -18,5 +19,13 @@ class Config(BaseSettings):
     DOCS_FILE: str = "data/documents.json"
     TOP_K: int = 4
 
-    
+    # JWT Settings
+    JWT_SECRET_KEY: str = "change-me-in-production-use-env-var"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
+
+    # Database Settings
+    DATABASE_URL: str = "sqlite:///./law.db"
+
+
 config = Config()

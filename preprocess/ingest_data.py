@@ -25,6 +25,7 @@ from pydantic_settings import BaseSettings
 
 load_dotenv()
 
+
 class Config(BaseSettings):
     APP_NAME: str = "Vietnamese Law API"
     API_STR: str = "/api/v1"
@@ -39,16 +40,18 @@ class Config(BaseSettings):
     EMBEDDINGS_FILE: str = f"data/processed_chunksize_{CHUNK_SIZE}_alibaba/embeddings.pkl"
     DOCS_FILE: str = f"data/processed_chunksize_{CHUNK_SIZE}_alibaba/documents.json"
 
-    
+
 config = Config()
 
+
 def _read_embeddings_from_pkl(input_file):
-    with open(input_file, 'rb') as f:
+    with open(input_file, "rb") as f:
         embeddings = pkl.load(f)
     return embeddings
-    
+
+
 def _load_docs_from_json(input_file):
-    with open(input_file, 'r', encoding='utf-8') as f:
+    with open(input_file, "r", encoding="utf-8") as f:
         json_docs = json.load(f)
         docs = [Document(**doc) for doc in json_docs]
     return docs
@@ -61,8 +64,8 @@ def ingest_data() -> None:
     """
     client = QdrantClient(host="localhost", port=config.QDRANT_PORT)
     collection_name = config.COLLECTION_NAME
-    
-# Check if collection exists safely
+
+    # Check if collection exists safely
     if client.collection_exists(collection_name=collection_name):
         logger.info(f"Collection '{collection_name}' already exists.")
         try:
@@ -73,13 +76,13 @@ def ingest_data() -> None:
             return
     else:
         logger.info(f"Collection '{collection_name}' does not exist. Proceeding...")
-        
+
     # Prepare data for upsert
     client.create_collection(
         collection_name=collection_name,
-        vectors_config=VectorParams(size=768, distance=Distance.COSINE),
+        vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
     )
-    
+
     docs = _load_docs_from_json(config.DOCS_FILE)
     embeddings = _read_embeddings_from_pkl(config.EMBEDDINGS_FILE)
 
@@ -91,32 +94,26 @@ def ingest_data() -> None:
 
     # Loop through data in chunks
     for i in tqdm(range(0, total_docs, BATCH_SIZE), desc="Uploading to Qdrant"):
-        
+
         # 1. Slice the current batch
         batch_docs = docs[i : i + BATCH_SIZE]
         batch_vecs = embeddings[i : i + BATCH_SIZE]
-        
+
         # 2. Build points using List Comprehension (faster than .append loops)
         points = [
             PointStruct(
                 id=str(uuid.uuid4()),
                 vector=vector,
-                payload={
-                    "page_content": doc.page_content,
-                    "metadata": doc.metadata
-                }
+                payload={"page_content": doc.page_content, "metadata": doc.metadata},
             )
             for doc, vector in zip(batch_docs, batch_vecs)
         ]
 
         # 3. Upsert the batch
         # wait=False significantly speeds up ingestion by not blocking for disk sync
-        client.upsert(
-            collection_name=collection_name,
-            points=points,
-            wait=False 
-        )
+        client.upsert(collection_name=collection_name, points=points, wait=False)
     logger.info("Data ingestion to Qdrant completed.")
-    
+
+
 if __name__ == "__main__":
     ingest_data()

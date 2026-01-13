@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # Configure logging to show up in console
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class ChatService:  
+class ChatService:
     """Handle chat completion requests against Gemini with RAG."""
 
     def __init__(self, use_reranker: bool = False) -> None:
