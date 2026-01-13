@@ -231,51 +231,18 @@ def format_for_frontend(doc: LawDocument) -> Dict:
 class LawDocumentService:
     """
     Service class for law document operations.
-    Uses Qdrant for fast semantic search and file system for document retrieval.
+    Uses file system for document listing, retrieval, and text-based search.
     """
 
     def __init__(self, docs_root: Optional[str] = None):
         self.docs_root = Path(docs_root) if docs_root else Path(config.DOCS_ROOT)
         self._id_to_filepath: Dict[str, str] = {}
-        self._qdrant: Optional["QdrantClient"] = None
-        self._embedder: Optional["SentenceTransformer"] = None
-        self._initialized = False
 
     def startup(self) -> None:
-        """Initialize the service: build ID mapping and connect to Qdrant."""
+        """Initialize the service: build ID mapping."""
         logger.info("Initializing LawDocumentService...")
         self._build_id_mapping()
-        self._init_qdrant()
         logger.info("LawDocumentService initialized successfully")
-
-    def _init_qdrant(self) -> None:
-        """Initialize Qdrant client and embedding model for semantic search."""
-        if self._initialized:
-            return
-
-        try:
-            from qdrant_client import QdrantClient
-            from sentence_transformers import SentenceTransformer
-
-            # Try Docker hostname first, fall back to localhost
-            try:
-                self._qdrant = QdrantClient(host="qdrant", port=config.QDRANT_PORT)
-                # Test connection
-                self._qdrant.get_collections()
-                logger.info("Connected to Qdrant at 'qdrant' hostname")
-            except Exception:
-                self._qdrant = QdrantClient(host="localhost", port=config.QDRANT_PORT)
-                logger.info("Connected to Qdrant at 'localhost'")
-
-            self._embedder = SentenceTransformer('minhquan6203/paraphrase-vietnamese-law')
-            logger.info("Loaded embedding model for semantic search")
-            self._initialized = True
-
-        except Exception as e:
-            logger.warning(f"Could not initialize Qdrant/Embedder: {e}. Falling back to text search.")
-            self._qdrant = None
-            self._embedder = None
-            self._initialized = True
 
     def _get_cache_path(self) -> Path:
         """Get the path to the cache file."""
@@ -451,128 +418,7 @@ class LawDocumentService:
         page_size: int = 20
     ) -> Dict:
         """
-        Search for documents matching the query.
-        Uses Qdrant semantic search for fast results, falls back to text search.
-        """
-        self._init_qdrant()
-
-        # Try semantic search with Qdrant
-        if self._qdrant and self._embedder:
-            return self._search_with_qdrant(query, doc_type, page, page_size)
-        
-        # Fallback to text search
-        logger.info("Using fallback text search")
-        return self._search_with_text(query, doc_type, page, page_size)
-
-    def _search_with_qdrant(
-        self,
-        query: str,
-        doc_type: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 20
-    ) -> Dict:
-        """
-        Semantic search using Qdrant vector database.
-        Returns documents ranked by semantic similarity.
-        """
-        try:
-            # Encode query to vector
-            query_vector = self._embedder.encode(query).tolist()
-            
-            # Search with larger limit to allow for deduplication and filtering
-            search_limit = page_size * 5  # Get more results for deduplication
-            
-            logger.info(f"Searching Qdrant for: '{query}'")
-            search_results = self._qdrant.query_points(
-                collection_name="laws",
-                query=query_vector,
-                limit=search_limit,
-                with_payload=True
-            )
-
-            points = search_results.points if hasattr(search_results, 'points') else []
-            logger.info(f"Qdrant returned {len(points)} results")
-
-            # Deduplicate by law_id and collect unique documents
-            seen_law_ids = set()
-            unique_docs = []
-
-            for point in points:
-                payload = point.payload
-                law_id = str(payload.get('law_id', ''))
-                
-                if not law_id or law_id in seen_law_ids:
-                    continue
-                
-                seen_law_ids.add(law_id)
-
-                # Load full document to get metadata
-                filepath = self._find_filepath_by_id(law_id)
-                if not filepath:
-                    continue
-
-                try:
-                    doc = load_law_document(filepath)
-                    
-                    # Filter by document type if specified
-                    if doc_type and doc.type != doc_type:
-                        continue
-
-                    # Create snippet from matched article if available
-                    matched_snippet = payload.get('source_text', '')[:200]
-                    if matched_snippet:
-                        matched_snippet = matched_snippet.strip() + '...'
-
-                    unique_docs.append({
-                        "id": doc.id,
-                        "title": doc.title,
-                        "type": doc.type,
-                        "ref": f"{doc.type} {doc.number}",
-                        "date": doc.date,
-                        "snippet": matched_snippet or doc.snippet,
-                        "score": point.score if hasattr(point, 'score') else 0
-                    })
-                except Exception as e:
-                    logger.warning(f"Error loading document {law_id}: {e}")
-                    continue
-
-            # Sort by relevance score (already sorted by Qdrant, but ensure order)
-            unique_docs.sort(key=lambda x: x.get('score', 0), reverse=True)
-
-            # Remove score from final output
-            for doc in unique_docs:
-                doc.pop('score', None)
-
-            # Paginate
-            total = len(unique_docs)
-            start = (page - 1) * page_size
-            end = start + page_size
-            items = unique_docs[start:end]
-
-            logger.info(f"Returning {len(items)} unique documents from Qdrant search")
-
-            return {
-                "items": items,
-                "total": total,
-                "page": page,
-                "page_size": page_size,
-                "total_pages": (total + page_size - 1) // page_size if total > 0 else 0
-            }
-
-        except Exception as e:
-            logger.error(f"Qdrant search failed: {e}. Falling back to text search.")
-            return self._search_with_text(query, doc_type, page, page_size)
-
-    def _search_with_text(
-        self,
-        query: str,
-        doc_type: Optional[str] = None,
-        page: int = 1,
-        page_size: int = 20
-    ) -> Dict:
-        """
-        Fallback text-based search (case-insensitive).
-        Used when Qdrant is not available.
+        Text-based search (case-insensitive) in document title and content.
         """
         results = []
         query_lower = query.lower()

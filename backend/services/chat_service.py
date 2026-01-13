@@ -49,9 +49,15 @@ class ChatService:
         
         # 2. Initialize Qdrant & Embeddings
         try:
-            # We use QdrantClient to manage the connection
-            client = QdrantClient(host="qdrant", port=config.QDRANT_PORT)
-            
+            # Try Docker hostname first, fall back to localhost
+            try:
+                client = QdrantClient(host="qdrant", port=config.QDRANT_PORT)
+                client.get_collections()  # Test connection
+                logger.info("Connected to Qdrant at 'qdrant' hostname")
+            except Exception:
+                client = QdrantClient(host="localhost", port=config.QDRANT_PORT)
+                logger.info("Connected to Qdrant at 'localhost'")
+
             # We use LangChain's wrapper for the store
             self.vector_store = QdrantVectorStore(
                 client=client,
@@ -61,7 +67,7 @@ class ChatService:
             logger.info("Connected to Qdrant successfully.")
         except Exception as e:
             logger.error(f"Could not connect to Qdrant: {e}")
-            # We might want to allow startup to finish without vector store 
+            # We might want to allow startup to finish without vector store
             # so the chat works (just without context)
             self.vector_store = None
 
@@ -100,6 +106,24 @@ class ChatService:
             except Exception as e:
                 logger.error(f"Error retrieving from Qdrant: {e}")
                 context_text = "No context available due to database error."
+
+        # ===== DEBUG: Log what we send to Gemini =====
+        logger.info("=" * 60)
+        logger.info(f"[GEMINI INPUT] Session: {session_id}")
+        logger.info(f"[GEMINI INPUT] Query: {query}")
+        logger.info(f"[GEMINI INPUT] Context length: {len(context_text)} chars")
+        if context_text:
+            logger.info(f"[GEMINI INPUT] Context preview:\n{context_text[:1000]}...")
+        else:
+            logger.info("[GEMINI INPUT] Context: EMPTY (No RAG)")
+
+        # Log history
+        history = self._get_session_history(session_id)
+        logger.info(f"[GEMINI INPUT] History messages: {len(history.messages)}")
+        for i, msg in enumerate(history.messages):
+            logger.info(f"[GEMINI INPUT] History[{i}] ({msg.type}): {str(msg.content)[:200]}...")
+        logger.info("=" * 60)
+        # ===== END DEBUG =====
 
         # 2. Prompt Construction (Now with History!)
         system_template = """You are a Vietnamese Legal Assistant. 
