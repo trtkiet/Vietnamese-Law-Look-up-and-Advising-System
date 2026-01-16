@@ -24,3 +24,7 @@ evaluate/
 AGENTS.md
 *.db
 *.stackdump
+.ignore
+nul
+opencode.json
+preprocess/*json
