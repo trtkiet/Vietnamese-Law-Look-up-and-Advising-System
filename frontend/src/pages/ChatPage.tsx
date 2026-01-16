@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, useParams, NavLink } from 'react-router-dom';
 import type { LawSource } from '../types/index';
 import type { SessionMessage } from '../types/session';
 import ReactMarkdown from 'react-markdown';
@@ -92,6 +92,7 @@ function convertSessionMessages(messages: SessionMessage[]): ExtendedMessage[] {
 
 export const ChatPage: React.FC = () => {
   const navigate = useNavigate();
+  const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
   const {
     sessions,
     activeSessionId,
@@ -105,6 +106,13 @@ export const ChatPage: React.FC = () => {
     updateSessionInList,
     clearError: clearSessionError,
   } = useSessions();
+
+  // Sync state with URL (URL is the source of truth)
+  useEffect(() => {
+    if (urlSessionId !== activeSessionId) {
+      selectSession(urlSessionId || null);
+    }
+  }, [urlSessionId]); // Only react to URL changes, not activeSessionId
 
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [composer, setComposer] = useState('');
@@ -217,9 +225,9 @@ export const ChatPage: React.FC = () => {
 
       const data = await response.json() as ChatApiResponse;
 
-      // If this was a new session, select it and refresh sessions list
+      // If this was a new session, update URL and refresh sessions list
       if (!sessionId && data.session_id) {
-        selectSession(data.session_id);
+        navigate(`/chat/${data.session_id}`, { replace: true });
         fetchSessions();
       }
 
@@ -275,16 +283,20 @@ export const ChatPage: React.FC = () => {
 
   // Start new conversation
   const handleNewConversation = useCallback(() => {
-    selectSession(null);
     setMessages([]);
     setSidebarOpen(false);
-  }, [selectSession]);
+    navigate('/');
+  }, [navigate]);
 
   // Select a session
   const handleSelectSession = useCallback((sessionId: string | null) => {
-    selectSession(sessionId);
     setSidebarOpen(false);
-  }, [selectSession]);
+    if (sessionId) {
+      navigate(`/chat/${sessionId}`);
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
 
   // Retry failed message
   const handleRetry = useCallback(() => {
