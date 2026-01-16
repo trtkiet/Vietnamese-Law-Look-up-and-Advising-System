@@ -4,5 +4,12 @@ from .base import RAGPipeline
 from .gte_pipeline import GTEPipeline
 from .vietnamese_embedding_pipeline import VietnameseEmbeddingPipeline
 from .bge_m3_pipeline import BGEM3Pipeline
+from .agentic_rag_pipeline import AgenticRAGPipeline
 
-__all__ = ["RAGPipeline", "GTEPipeline", "VietnameseEmbeddingPipeline", "BGEM3Pipeline"]
+__all__ = [
+    "RAGPipeline",
+    "GTEPipeline",
+    "VietnameseEmbeddingPipeline",
+    "BGEM3Pipeline",
+    "AgenticRAGPipeline",
+]
