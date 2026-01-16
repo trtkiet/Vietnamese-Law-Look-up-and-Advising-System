@@ -91,7 +91,7 @@ def run_pipeline_eval(args, k_values):
         "qdrant_port": args.port or 6333,
     }
 
-    if args.mode in ("pipeline", "gte", "vietnamese"):
+    if args.mode in ("pipeline", "gte", "vietnamese", "bge"):
         adapter_kwargs["retrieval_mode"] = args.retrieval_mode
         adapter_kwargs["use_reranker"] = args.reranker
         adapter_kwargs["reranker_model"] = args.reranker_model
@@ -149,7 +149,7 @@ Examples:
         "--mode",
         type=str,
         default="qdrant",
-        choices=["qdrant", "pipeline", "gte", "vietnamese", "direct"],
+        choices=["qdrant", "pipeline", "gte", "vietnamese", "bge", "direct"],
         help="Evaluation mode: 'qdrant' (original), 'pipeline'/'gte' (GTEPipeline), 'vietnamese' (VietnameseEmbeddingPipeline), 'direct' (lightweight Qdrant)",
     )
     parser.add_argument(
@@ -162,7 +162,7 @@ Examples:
         "--embedding",
         type=str,
         default="gte",
-        choices=["gte", "vietnamese"],  # Add more as implemented
+        choices=["gte", "vietnamese", "bge"],  # Add more as implemented
         help="Embedding provider to use (default: gte) - only for qdrant mode",
     )
     parser.add_argument(

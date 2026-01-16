@@ -30,7 +30,7 @@ def get_embedding_provider(name: str) -> EmbeddingProvider:
     providers = {
         "gte": GTEProvider,
         "vietnamese": VietnameseProvider,
-        "bge_m3": BGEM3Provider,
+        "bge": BGEM3Provider,
         # Future providers:
         # "e5": E5Provider,
     }

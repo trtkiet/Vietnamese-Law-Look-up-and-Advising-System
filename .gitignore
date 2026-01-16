@@ -28,3 +28,5 @@ AGENTS.md
 nul
 opencode.json
 preprocess/*json
+.deepeval*
+benchmarks/results/*

@@ -281,12 +281,13 @@ def _get_pipeline_registry() -> dict[str, Type]:
     Returns:
         Dictionary mapping pipeline names to their classes.
     """
-    from services.pipelines import GTEPipeline, VietnameseEmbeddingPipeline
+    from services.pipelines import GTEPipeline, VietnameseEmbeddingPipeline, BGEM3Pipeline
 
     return {
         "gte": GTEPipeline,
         "pipeline": GTEPipeline,  # Alias for backward compatibility
         "vietnamese": VietnameseEmbeddingPipeline,
+        "bge": BGEM3Pipeline,  # Placeholder for future BGE pipeline
         # Add new pipelines here:
         # "bm25": BM25Pipeline,
     }
