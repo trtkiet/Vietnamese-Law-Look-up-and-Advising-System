@@ -875,29 +875,27 @@
     
     \vspace{0.15cm}
     \begin{center}
-    \begin{columns}[c]
-        \begin{column}{0.40\textwidth}
-            \centering
-            \textbf{Key Design Decisions}
-            \begin{itemize}
-                \setlength\itemsep{0.1em}
-                \item[\checkmark] \footnotesize Qdrant: native hybrid search
-                \item[\checkmark] \footnotesize LangGraph: stateful workflows
-                \item[\checkmark] \footnotesize Local GPU: fast embedding
-            \end{itemize}
-        \end{column}
-        \hspace{1.5cm}
-        \begin{column}{0.40\textwidth}
-            \centering
-            \textbf{Performance}
-            \begin{itemize}
-                \setlength\itemsep{0.1em}
-                \item[\checkmark] \footnotesize Retrieval: 0.13s per query
-                \item[\checkmark] \footnotesize Generation: 3.05s (k=5)
-                \item[\checkmark] \footnotesize 150K chunks indexed
-            \end{itemize}
-        \end{column}
-    \end{columns}
+    \begin{minipage}{0.42\textwidth}
+        \centering
+        \textbf{Key Design Decisions}
+        \begin{itemize}
+            \setlength\itemsep{0.1em}
+            \item[\checkmark] \footnotesize Qdrant: native hybrid search
+            \item[\checkmark] \footnotesize LangGraph: stateful workflows
+            \item[\checkmark] \footnotesize Local GPU: fast embedding
+        \end{itemize}
+    \end{minipage}
+    \hspace{1cm}
+    \begin{minipage}{0.42\textwidth}
+        \centering
+        \textbf{Performance}
+        \begin{itemize}
+            \setlength\itemsep{0.1em}
+            \item[\checkmark] \footnotesize Retrieval: 0.13s per query
+            \item[\checkmark] \footnotesize Generation: 3.05s (k=5)
+            \item[\checkmark] \footnotesize 150K chunks indexed
+        \end{itemize}
+    \end{minipage}
     \end{center}
 \end{frame}
 
