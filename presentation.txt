@@ -667,7 +667,7 @@
             \begin{center}
             \begin{tikzpicture}[scale=0.68]
                 % Relevancy chart
-                \node[font=\small\bfseries] at (2.8, 4.3) {Relevancy Score};
+                \node[font=\small\bfseries] at (2.8, 5.0) {Relevancy Score};
                 
                 \draw[->] (0, 0) -- (0, 4);
                 \draw[->] (0, 0) -- (5.5, 0);
@@ -695,8 +695,7 @@
                 \node[below, font=\tiny] at (4.15, -0.1) {S-5};
                 \node[above, font=\tiny] at (4.15, 2.5) {.785};
                 
-                % Best marker - simple arrow pointing to T-5 bar
-                \draw[best, thick, -{Stealth}] (1.95, 3.8) -- (1.95, 3.45);
+                % Best marker
                 \node[font=\tiny, best, above] at (1.95, 3.8) {Best};
             \end{tikzpicture}
             \end{center}
