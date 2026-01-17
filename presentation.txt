@@ -109,7 +109,82 @@
 \end{frame}
 
 % ========================================
-% SLIDE 3: SYSTEM ARCHITECTURE (Full Pipeline)
+% SLIDE 3: RELATED WORK
+% ========================================
+\begin{frame}{Related Work}
+    \begin{center}
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{RAG Foundations}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                work/.style={rectangle, draw=primary, fill=primary!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[work] (r1) at (0, 1.6) {RAG (Lewis et al., 2020)};
+                \node[font=\tiny, below=0.01cm of r1, text width=4cm, align=center] {Ground LLM in retrieved docs};
+                
+                \node[work] (r2) at (0, 0.5) {Self-RAG, Corrective RAG};
+                \node[font=\tiny, below=0.01cm of r2, text width=4cm, align=center] {Query routing, doc grading, rewriting};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Vietnamese Embeddings}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                work/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[work] (e1) at (0, 1.6) {GTE-Multilingual};
+                \node[font=\tiny, below=0.01cm of e1] {768-dim, general multilingual};
+                
+                \node[work] (e2) at (0, 0.5) {BGE-M3};
+                \node[font=\tiny, below=0.01cm of e2] {Dense + Sparse, 100+ languages};
+                
+                \node[work, fill=best!20, draw=best] (e3) at (0, -0.6) {Vietnamese-Embedding-v2};
+                \node[font=\tiny, below=0.01cm of e3] {BGE-M3 fine-tuned for Vietnamese};
+            \end{tikzpicture}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{Legal QA Challenges}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                challenge/.style={rectangle, draw=accent, fill=accent!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[challenge] (c1) at (0, 2.4) {Hierarchical Structure};
+                \node[font=\tiny, below=0.01cm of c1] {Phan $\rightarrow$ Chuong $\rightarrow$ Muc $\rightarrow$ Dieu};
+                
+                \node[challenge] (c2) at (0, 1.3) {Cross-references};
+                \node[font=\tiny, below=0.01cm of c2] {Laws reference other laws};
+                
+                \node[challenge] (c3) at (0, 0.2) {Precise Citations Required};
+                \node[font=\tiny, below=0.01cm of c3] {Must cite specific Dieu, Khoan};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Benchmarks}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                bench/.style={rectangle, draw=purple, fill=purple!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[bench] (b1) at (0, 0.8) {Zalo AI Legal Retrieval};
+                \node[font=\tiny, below=0.01cm of b1] {61K docs, 793 queries};
+                
+                \node[bench] (b2) at (0, -0.3) {VLSP Legal QA};
+                \node[font=\tiny, below=0.01cm of b2] {Vietnamese legal comprehension};
+            \end{tikzpicture}
+        \end{column}
+    \end{columns}
+    \end{center}
+\end{frame}
+
+% ========================================
+% SLIDE 4: SYSTEM ARCHITECTURE (Full Pipeline)
 % ========================================
 \begin{frame}{System Architecture: End-to-End Pipeline}
     \begin{center}
@@ -328,7 +403,81 @@
 \end{frame}
 
 % ========================================
-% SLIDE 6: EMBEDDING MODEL EVALUATION
+% SLIDE 7: EXPERIMENT SETUP
+% ========================================
+\begin{frame}{Experiment Setup}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Retrieval Evaluation}
+            \vspace{0.2cm}
+            
+            \fcolorbox{primary}{primary!5}{
+                \parbox{0.95\textwidth}{
+                    \footnotesize
+                    \textbf{Dataset}: Zalo AI Legal Retrieval\\
+                    \textbf{Corpus}: 61,425 legal documents\\
+                    \textbf{Queries}: 793 annotated queries\\
+                    \textbf{Chunking}: 512 tokens, 50 overlap
+                }
+            }
+            
+            \vspace{0.3cm}
+            \textbf{Protocol}:
+            \begin{enumerate}
+                \setlength\itemsep{0.05em}
+                \item[\footnotesize 1.] \footnotesize Ingest \& embed all chunks
+                \item[\footnotesize 2.] \footnotesize Retrieve top-k for each query
+                \item[\footnotesize 3.] \footnotesize Map chunks $\rightarrow$ Article IDs
+                \item[\footnotesize 4.] \footnotesize Score against ground truth
+            \end{enumerate}
+            
+            \vspace{0.2cm}
+            \textbf{Metrics}: Hit Rate, Precision, Recall, F1\\
+            @ $k \in \{1, 5, 10\}$
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Generation Evaluation}
+            \vspace{0.2cm}
+            
+            \fcolorbox{secondary}{secondary!5}{
+                \parbox{0.95\textwidth}{
+                    \footnotesize
+                    \textbf{Dataset}: VLSP2025 Public-test\\
+                    \textbf{Task}: Legal MCQ\\
+                    \textbf{Queries}: 146 QA pairs\\
+                    \textbf{LLM}: Gemini 2.5 Flash Lite
+                }
+            }
+            
+            \vspace{0.3cm}
+            \textbf{LLM-as-Judge} (DeepEval):
+            \vspace{0.1cm}
+            
+            \begin{tikzpicture}[
+                metric/.style={rectangle, draw=#1, fill=#1!10, rounded corners, minimum width=4cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[metric=primary] (m1) at (0, 1) {\textbf{Relevancy}};
+                \node[font=\tiny, right=0.1cm of m1] {Answers query?};
+                
+                \node[metric=secondary] (m2) at (0, 0) {\textbf{Faithfulness}};
+                \node[font=\tiny, right=0.1cm of m2] {No hallucination?};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Configurations Tested}:
+            \begin{itemize}
+                \setlength\itemsep{0.02em}
+                \item[\footnotesize$\bullet$] \footnotesize 3 embedding models
+                \item[\footnotesize$\bullet$] \footnotesize 4 reranker options
+                \item[\footnotesize$\bullet$] \footnotesize 2 RAG architectures $\times$ 2 k values
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ========================================
+% SLIDE 8: EMBEDDING MODEL EVALUATION
 % ========================================
 \begin{frame}{Embedding Model Selection: Why Vietnamese-Specific?}
     \vspace{-0.1cm}
@@ -788,75 +937,6 @@
             \textbf{Evaluation Method}:\\
             LLM-as-Judge (Gemini) | DeepEval
             \end{center}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-% ========================================
-% SLIDE 12: EVALUATION METHODOLOGY
-% ========================================
-\begin{frame}{Evaluation Methodology}
-    \begin{columns}[T]
-        \begin{column}{0.48\textwidth}
-            \textbf{Retrieval Metrics}
-            \vspace{0.2cm}
-            
-            \begin{tikzpicture}[
-                metric/.style={rectangle, draw=primary, fill=primary!10, rounded corners, minimum width=4.2cm, minimum height=0.6cm, align=left, font=\footnotesize}
-            ]
-                \node[metric] (m1) at (0, 2.4) {\textbf{Hit Rate @k}};
-                \node[font=\tiny, right=0.1cm of m1] {$\geq$1 relevant in top-k};
-                
-                \node[metric] (m2) at (0, 1.4) {\textbf{Precision @k}};
-                \node[font=\tiny, right=0.1cm of m2] {Relevant / Retrieved};
-                
-                \node[metric] (m3) at (0, 0.4) {\textbf{F1 Score @k}};
-                \node[font=\tiny, right=0.1cm of m3] {Harmonic mean};
-            \end{tikzpicture}
-            
-            \vspace{0.3cm}
-            \textbf{Generation Metrics}
-            \vspace{0.2cm}
-            
-            \begin{tikzpicture}[
-                metric/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.2cm, minimum height=0.6cm, align=left, font=\footnotesize}
-            ]
-                \node[metric] (g1) at (0, 1.2) {\textbf{Relevancy}};
-                \node[font=\tiny, right=0.1cm of g1] {Addresses query?};
-                
-                \node[metric] (g2) at (0, 0.2) {\textbf{Faithfulness}};
-                \node[font=\tiny, right=0.1cm of g2] {Grounded in context?};
-            \end{tikzpicture}
-        \end{column}
-        
-        \begin{column}{0.48\textwidth}
-            \textbf{Evaluation Setup}
-            \vspace{0.2cm}
-            
-            \fcolorbox{dark}{lightgray}{
-                \parbox{0.95\textwidth}{
-                    \footnotesize
-                    \textbf{Dataset}: Zalo AI Legal Benchmark\\
-                    \textbf{Queries}: 150 legal questions\\
-                    \textbf{Types}: Factual, procedural, comparative\\
-                    \textbf{Judge}: Gemini (LLM-as-Judge)\\
-                    \textbf{Framework}: DeepEval
-                }
-            }
-            
-            \vspace{0.3cm}
-            \textbf{Experiment Coverage}
-            \vspace{0.2cm}
-            
-            \begin{tikzpicture}[
-                box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2cm, minimum height=0.5cm, align=center, font=\tiny}
-            ]
-                \node[box=primary!20] at (0, 0.8) {7 Embedding};
-                \node[box=accent!20] at (2.3, 0.8) {4 Reranker};
-                \node[box=secondary!20] at (4.6, 0.8) {4 RAG};
-                
-                \node[font=\footnotesize, below] at (2.3, 0.2) {\textbf{= 2,250 evaluated retrievals}};
-            \end{tikzpicture}
         \end{column}
     \end{columns}
 \end{frame}
