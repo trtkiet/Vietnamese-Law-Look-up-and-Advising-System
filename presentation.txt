@@ -548,19 +548,19 @@
         \draw[arr] (ret1) -- (gen1);
         
         % Self-Reflective - spread out more like Traditional row
-        \node[font=\footnotesize\bfseries, secondary] at (-2, -1.2) {Self-Reflective};
+        \node[font=\footnotesize\bfseries, secondary] at (-2.2, -1.2) {Self-Reflective};
         \node[box=gray!20] (q2) at (0, -1.2) {Query};
-        \node[box=accent!30] (route) at (2, -1.2) {Route};
-        \node[box=purple!20] (ret2) at (4, -1.2) {Retrieve};
-        \node[box=secondary!30] (grade) at (6, -1.2) {Grade};
-        \node[box=blue!20] (gen2) at (8, -1.2) {Generate};
+        \node[box=accent!30] (route) at (3, -1.2) {Route};
+        \node[box=purple!20] (ret2) at (6, -1.2) {Retrieve};
+        \node[box=secondary!30] (grade) at (9, -1.2) {Grade};
+        \node[box=blue!20] (gen2) at (12, -1.2) {Generate};
         \draw[arr] (q2) -- (route);
         \draw[arr] (route) -- (ret2);
         \draw[arr] (ret2) -- (grade);
         \draw[arr] (grade) -- (gen2);
         
         % Rewrite loop - go down clearly below the boxes
-        \draw[arr, dashed] (grade.south) -- ++(0, -0.8) -| node[below, font=\tiny, pos=0.25] {rewrite} (ret2.south);
+        \draw[arr, dashed] (grade.south) -- ++(0, -0.6) -| node[below, font=\tiny, pos=0.25] {rewrite} (ret2.south);
     \end{tikzpicture}
     \end{center}
 \end{frame}
