@@ -113,81 +113,79 @@
 \begin{frame}{System Architecture: End-to-End Pipeline}
     \begin{center}
     \begin{tikzpicture}[
-        scale=0.85,
-        box/.style={rectangle, draw=dark, fill=#1, rounded corners=3pt, minimum height=0.7cm, align=center, font=\footnotesize},
-        db/.style={cylinder, draw=dark, fill=#1, shape border rotate=90, aspect=0.3, minimum height=0.8cm, minimum width=1cm, align=center, font=\tiny},
+        scale=0.8,
+        box/.style={rectangle, draw=dark, fill=#1, rounded corners=3pt, minimum height=0.65cm, align=center, font=\footnotesize},
+        db/.style={cylinder, draw=dark, fill=#1, shape border rotate=90, aspect=0.3, minimum height=0.7cm, minimum width=0.9cm, align=center, font=\tiny},
         arr/.style={-{Stealth[length=2mm]}, thick, #1},
         phase/.style={font=\scriptsize\bfseries, #1}
     ]
         % Phase labels
-        \node[phase=primary] at (-5.5, 2.8) {OFFLINE};
-        \node[phase=secondary] at (2, 2.8) {ONLINE};
+        \node[phase=primary] at (-5, 2.8) {OFFLINE};
+        \node[phase=secondary] at (3, 2.8) {ONLINE};
         
         % Offline Pipeline (Data Ingestion)
-        \node[box=gray!20, minimum width=1.5cm] (crawl) at (-6, 1.8) {Crawler};
-        \node[box=accent!20, minimum width=1.5cm] (chunk) at (-4, 1.8) {Chunker};
-        \node[box=purple!20, minimum width=1.5cm] (embed) at (-2, 1.8) {Embedder};
-        \node[db=blue!15] (qdrant) at (0, 1.8) {Qdrant};
+        \node[box=gray!20, minimum width=1.4cm] (crawl) at (-5.5, 1.8) {Crawler};
+        \node[box=accent!20, minimum width=1.4cm] (chunk) at (-3.5, 1.8) {Chunker};
+        \node[box=purple!20, minimum width=1.4cm] (embed) at (-1.5, 1.8) {Embedder};
+        \node[db=blue!15] (qdrant) at (0.5, 1.8) {Qdrant};
         
         \draw[arr=primary] (crawl) -- (chunk);
         \draw[arr=primary] (chunk) -- (embed);
         \draw[arr=primary] (embed) -- (qdrant);
         
         % Annotations
-        \node[below=0.1cm of crawl, font=\tiny, text=gray] {20K docs};
-        \node[below=0.1cm of chunk, font=\tiny, text=gray] {150K chunks};
-        \node[below=0.1cm of embed, font=\tiny, text=gray] {1024-dim};
+        \node[below=0.08cm of crawl, font=\tiny, text=gray] {20K docs};
+        \node[below=0.08cm of chunk, font=\tiny, text=gray] {150K chunks};
+        \node[below=0.08cm of embed, font=\tiny, text=gray] {1024-dim};
         
-        % Online Pipeline - User icon as TikZ
-        \node[circle, draw=dark, fill=gray!20, minimum size=0.5cm, font=\tiny] (user) at (-6, -0.3) {\textbf{U}};
-        \node[below=0.05cm of user, font=\tiny] {User};
+        % Online Pipeline - User icon
+        \node[circle, draw=dark, fill=gray!20, minimum size=0.45cm, font=\tiny] (user) at (-5.5, -0.5) {\textbf{U}};
+        \node[below=0.03cm of user, font=\tiny] {User};
         
-        \node[box=primary!15, minimum width=1.8cm] (fe) at (-4, -0.3) {React UI};
-        \node[box=secondary!15, minimum width=1.8cm] (be) at (-1.5, -0.3) {FastAPI};
+        \node[box=primary!15, minimum width=1.6cm] (fe) at (-3.5, -0.5) {React UI};
+        \node[box=secondary!15, minimum width=1.6cm] (be) at (-1.5, -0.5) {FastAPI};
         
-        % RAG Pipeline (expanded)
-        \node[box=accent!25, minimum width=5.5cm, minimum height=1.8cm] (rag) at (3.5, -0.3) {};
-        \node[above=0.15cm, font=\footnotesize\bfseries] at (3.5, 0.3) {RAG Pipeline};
+        % RAG Pipeline box
+        \node[box=accent!15, minimum width=5cm, minimum height=1.4cm] (ragbox) at (3.5, -0.5) {};
+        \node[font=\footnotesize\bfseries] at (3.5, 0.15) {RAG Pipeline};
         
-        % Inside RAG
-        \node[box=purple!15, minimum width=1cm, font=\tiny] (route) at (1.8, -0.3) {Route};
-        \node[box=blue!15, minimum width=1cm, font=\tiny] (retr) at (3, -0.3) {Retrieve};
-        \node[box=accent!15, minimum width=1cm, font=\tiny] (grade) at (4.2, -0.3) {Grade};
-        \node[box=secondary!15, minimum width=1cm, font=\tiny] (gen) at (5.4, -0.3) {Generate};
+        % Inside RAG - horizontal layout
+        \node[box=purple!20, minimum width=0.9cm, font=\tiny] (route) at (1.8, -0.7) {Route};
+        \node[box=blue!20, minimum width=0.9cm, font=\tiny] (retr) at (2.9, -0.7) {Retrieve};
+        \node[box=accent!30, minimum width=0.9cm, font=\tiny] (grade) at (4.0, -0.7) {Grade};
+        \node[box=secondary!20, minimum width=0.9cm, font=\tiny] (gen) at (5.1, -0.7) {Generate};
         
-        \draw[arr=dark, thin] (route) -- (retr);
-        \draw[arr=dark, thin] (retr) -- (grade);
-        \draw[arr=dark, thin] (grade) -- (gen);
+        \draw[-{Stealth[length=1.5mm]}, dark] (route) -- (retr);
+        \draw[-{Stealth[length=1.5mm]}, dark] (retr) -- (grade);
+        \draw[-{Stealth[length=1.5mm]}, dark] (grade) -- (gen);
         
         % Connections
         \draw[arr=primary] (user) -- (fe);
         \draw[arr=primary] (fe) -- (be);
         \draw[arr=primary] (be) -- (route);
         
-        % Qdrant connection
-        \draw[arr=primary, dashed] (qdrant) -- (retr);
+        % Qdrant to Retrieve connection
+        \draw[arr=primary, dashed] (qdrant) -- ++(0, -1.2) -| (retr);
         
-        % LLM
-        \node[db=accent!20] (llm) at (5.4, -1.8) {Gemini};
-        \draw[arr=accent, dashed] (gen) -- (llm);
-        \draw[arr=accent, dashed] (route) |- (llm);
-        \draw[arr=accent, dashed] (grade) |- (llm);
+        % LLM connection (simplified)
+        \node[db=accent!20] (llm) at (3.5, -2.3) {Gemini LLM};
+        \draw[arr=accent, dashed] (gen.south) -- ++(0, -0.3) -| (llm);
         
         % Database
-        \node[db=gray!20] (sqlite) at (-1.5, -1.8) {SQLite};
+        \node[db=gray!20] (sqlite) at (-1.5, -2.3) {SQLite};
         \draw[arr=gray, dashed] (be) -- (sqlite);
-        \node[below=0.05cm of sqlite, font=\tiny] {Sessions};
+        \node[below=0.03cm of sqlite, font=\tiny] {Sessions};
         
-        % Response arrow
-        \draw[arr=secondary, thick] (gen.east) -- ++(0.8, 0) |- (fe.east);
+        % Response arrow (cleaner path)
+        \draw[arr=secondary] (gen.east) -- ++(0.5, 0) -- ++(0, 1.5) -| (fe.north);
         
     \end{tikzpicture}
     \end{center}
     
-    \vspace{0.2cm}
+    \vspace{0.1cm}
     \begin{center}
         \footnotesize
-        \textcolor{primary}{\textbf{Key Components}}: Vietnamese-Embedding-v2 | Qdrant Hybrid | LangGraph Workflow | Gemini 2.5 Flash
+        \textcolor{primary}{\textbf{Key Components}}: Vietnamese-Embedding-v2 | Qdrant | LangGraph | Gemini 2.5 Flash
     \end{center}
 \end{frame}
 
@@ -313,12 +311,6 @@
         \draw[-{Stealth}, thick] (emb) -- (retr);
         \draw[-{Stealth}, thick] (retr) -- (rerank);
         \draw[-{Stealth}, thick] (rerank) -- (arch);
-        
-        % Evaluation labels
-        \node[font=\tiny\bfseries, primary] at (2, 0.8) {Slide 6};
-        \node[font=\tiny\bfseries, accent] at (6, 0.8) {Slide 6};
-        \node[font=\tiny\bfseries, purple] at (10, 0.8) {Slide 7};
-        \node[font=\tiny\bfseries, secondary] at (12, 0.8) {Slide 8-9};
     \end{tikzpicture}
     
     \vspace{0.5cm}
@@ -337,9 +329,10 @@
 % SLIDE 6: EMBEDDING MODEL EVALUATION
 % ========================================
 \begin{frame}{Embedding Model Selection: Why Vietnamese-Specific?}
+    \vspace{-0.1cm}
     \textbf{Hypothesis}: Domain-specific embedding outperforms multilingual for Vietnamese legal text
     
-    \vspace{0.2cm}
+    \vspace{0.15cm}
     \begin{columns}[T]
         \begin{column}{0.55\textwidth}
             \scriptsize
@@ -359,26 +352,30 @@
                 \rowcolor{best!20} \textbf{Viet-Emb Dense} & \textbf{.773} & \textbf{.947} & \textbf{.953} & \textbf{.773} & \textbf{.315} & \textbf{.173} \\
                 \bottomrule
             \end{tabular}
+            
+            \vspace{0.3cm}
+            \textbf{Key Insight}: Language-specific fine-tuning\\
+            outperforms hybrid retrieval for Vietnamese legal domain
         \end{column}
         
         \begin{column}{0.42\textwidth}
             \begin{center}
-            \begin{tikzpicture}
-                % Simple bar chart - Y: 0-4 represents 0-0.8
-                \draw[->] (0, 0) -- (0, 4.3);
+            \begin{tikzpicture}[scale=0.85]
+                % Bar chart
+                \draw[->] (0, 0) -- (0, 3.8);
                 \draw[->] (0, 0) -- (4, 0);
-                \node[above, font=\tiny] at (0, 4.3) {Hit@1};
+                \node[above, font=\tiny] at (0, 3.8) {Hit@1};
                 
                 % Y-axis labels
-                \node[left, font=\tiny] at (0, 2.5) {0.5};
-                \node[left, font=\tiny] at (0, 4) {0.8};
-                \draw[gray!30] (0, 2.5) -- (3.5, 2.5);
-                \draw[gray!30] (0, 4) -- (3.5, 4);
+                \node[left, font=\tiny] at (0, 2.2) {0.5};
+                \node[left, font=\tiny] at (0, 3.5) {0.8};
+                \draw[gray!30] (0, 2.2) -- (3.5, 2.2);
+                \draw[gray!30] (0, 3.5) -- (3.5, 3.5);
                 
-                % Bars (value * 5)
-                \fill[primary!60] (0.3, 0) rectangle (0.9, 2.64);
-                \fill[accent!60] (1.2, 0) rectangle (1.8, 2.9);
-                \fill[best] (2.1, 0) rectangle (2.7, 3.87);
+                % Bars (scaled)
+                \fill[primary!60] (0.3, 0) rectangle (0.9, 2.3);
+                \fill[accent!60] (1.2, 0) rectangle (1.8, 2.55);
+                \fill[best] (2.1, 0) rectangle (2.7, 3.4);
                 
                 % Labels
                 \node[below, font=\tiny] at (0.6, 0) {GTE};
@@ -386,29 +383,28 @@
                 \node[below, font=\tiny] at (2.4, 0) {Viet};
                 
                 % Values on bars
-                \node[above, font=\tiny] at (0.6, 2.64) {.53};
-                \node[above, font=\tiny] at (1.5, 2.9) {.58};
-                \node[above, font=\tiny, best] at (2.4, 3.87) {\textbf{.77}};
+                \node[above, font=\tiny] at (0.6, 2.3) {.53};
+                \node[above, font=\tiny] at (1.5, 2.55) {.58};
+                \node[above, font=\tiny, best] at (2.4, 3.4) {\textbf{.77}};
                 
                 % Arrow
-                \draw[thick, danger, -{Stealth}] (3.0, 2.9) -- (3.0, 3.87);
-                \node[right, font=\tiny, danger] at (3.0, 3.4) {\textbf{+33\%}};
+                \draw[thick, danger, -{Stealth}] (3.1, 2.55) -- (3.1, 3.4);
+                \node[right, font=\tiny, danger] at (3.1, 3.0) {\textbf{+33\%}};
             \end{tikzpicture}
             \end{center}
             
-            \vspace{0.1cm}
+            \vspace{0.15cm}
+            \begin{center}
             \fcolorbox{best}{best!10}{
-                \parbox{0.92\textwidth}{
+                \parbox{0.88\textwidth}{
                     \centering\footnotesize
                     \textbf{Winner}: Vietnamese-Embedding-v2\\
                     77.3\% vs 58.0\% (BGE Hybrid)
                 }
             }
+            \end{center}
         \end{column}
     \end{columns}
-    
-    \vspace{0.2cm}
-    \textbf{Key Insight}: Language-specific fine-tuning $>$ hybrid retrieval for Vietnamese legal domain
 \end{frame}
 
 % ========================================
@@ -443,7 +439,8 @@
         \end{column}
         
         \begin{column}{0.42\textwidth}
-            \begin{tikzpicture}[scale=0.75]
+            \begin{center}
+            \begin{tikzpicture}[scale=0.72]
                 % Latency vs Accuracy tradeoff
                 \draw[->] (0, 0) -- (5, 0) node[right, font=\tiny] {Latency (s)};
                 \draw[->] (0, 0) -- (0, 4) node[above, font=\tiny] {Hit@1};
@@ -454,32 +451,35 @@
                 }
                 
                 % Points
-                \fill[best!80] (0.2, 3.1) circle (4pt);
-                \node[right, font=\tiny] at (0.3, 3.1) {No Reranker};
+                \fill[best!80] (0.3, 3.1) circle (4pt);
+                \node[right, font=\tiny] at (0.5, 3.1) {No Reranker};
                 
-                \fill[accent!80] (3.5, 2.1) circle (4pt);
-                \node[below, font=\tiny] at (3.5, 2.0) {gte-reranker};
+                \fill[accent!80] (2.0, 2.1) circle (4pt);
+                \node[right, font=\tiny] at (2.1, 2.1) {gte-reranker};
                 
-                \fill[danger!80] (4.3, 2.7) circle (4pt);
-                \node[above, font=\tiny] at (4.3, 2.8) {bge-reranker};
+                \fill[danger!80] (4.2, 2.7) circle (4pt);
+                \node[left, font=\tiny] at (4.1, 2.7) {bge-reranker};
                 
-                % Optimal region
-                \draw[best, thick, dashed] (0, 2.8) -- (1, 2.8) -- (1, 3.4) -- (0, 3.4);
-                \node[font=\tiny, best] at (0.5, 3.6) {Optimal};
+                % Optimal region - properly enclosed
+                \draw[best, thick, dashed] (-0.1, 2.85) rectangle (0.9, 3.35);
+                \node[font=\tiny, best, above] at (0.4, 3.35) {Optimal};
                 
                 % Axis labels
-                \node[below, font=\tiny] at (0.2, -0.2) {0};
-                \node[below, font=\tiny] at (4.3, -0.2) {22};
+                \node[below, font=\tiny] at (0, -0.2) {0};
+                \node[below, font=\tiny] at (4.2, -0.2) {22};
             \end{tikzpicture}
+            \end{center}
             
-            \vspace{0.2cm}
+            \vspace{0.15cm}
+            \begin{center}
             \fcolorbox{primary}{primary!10}{
-                \parbox{0.95\textwidth}{
+                \parbox{0.9\textwidth}{
                     \centering\footnotesize
                     \textbf{Decision}: Skip reranker\\
                     High-quality embedding sufficient
                 }
             }
+            \end{center}
         \end{column}
     \end{columns}
     
@@ -491,69 +491,75 @@
 % SLIDE 8: PROBLEMS WITH TRADITIONAL RAG
 % ========================================
 \begin{frame}{RAG Challenges: Why Self-Reflective?}
-    \vspace{-0.2cm}
+    \vspace{-0.15cm}
     \textbf{Traditional RAG Failure Modes}:
     
-    \vspace{0.15cm}
-    \begin{columns}[T]
-        \begin{column}{0.48\textwidth}
+    \vspace{0.1cm}
+    \begin{columns}[c]
+        \begin{column}{0.45\textwidth}
+            \begin{center}
             \begin{tikzpicture}[
-                problem/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4.2cm, minimum height=0.55cm, align=center, font=\footnotesize}
+                problem/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4cm, minimum height=0.5cm, align=center, font=\footnotesize}
             ]
-                \node[problem] (p1) at (0, 2.2) {\textbf{Missing Content}};
-                \node[font=\tiny, below=0.02cm of p1] {No relevant docs $\rightarrow$ hallucination};
+                \node[problem] (p1) at (0, 2) {\textbf{Missing Content}};
+                \node[font=\tiny, below=0.01cm of p1] {No relevant docs $\rightarrow$ hallucination};
                 
-                \node[problem] (p2) at (0, 1.1) {\textbf{Missed Top-Ranked}};
-                \node[font=\tiny, below=0.02cm of p2] {Relevant doc ranked too low};
+                \node[problem] (p2) at (0, 1) {\textbf{Missed Top-Ranked}};
+                \node[font=\tiny, below=0.01cm of p2] {Relevant doc ranked too low};
                 
                 \node[problem] (p3) at (0, 0) {\textbf{Wrong Context}};
-                \node[font=\tiny, below=0.02cm of p3] {Non-legal query gets retrieval};
+                \node[font=\tiny, below=0.01cm of p3] {Non-legal query gets retrieval};
             \end{tikzpicture}
+            \end{center}
         \end{column}
         
-        \begin{column}{0.48\textwidth}
+        \begin{column}{0.45\textwidth}
+            \begin{center}
             \begin{tikzpicture}[
-                solution/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.2cm, minimum height=0.55cm, align=center, font=\footnotesize}
+                solution/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4cm, minimum height=0.5cm, align=center, font=\footnotesize}
             ]
-                \node[solution] (s1) at (0, 2.2) {\textbf{Document Grading}};
-                \node[font=\tiny, below=0.02cm of s1] {Filter irrelevant before generation};
+                \node[solution] (s1) at (0, 2) {\textbf{Document Grading}};
+                \node[font=\tiny, below=0.01cm of s1] {Filter irrelevant before generation};
                 
-                \node[solution] (s2) at (0, 1.1) {\textbf{Query Rewriting}};
-                \node[font=\tiny, below=0.02cm of s2] {Reformulate and retry (max 3x)};
+                \node[solution] (s2) at (0, 1) {\textbf{Query Rewriting}};
+                \node[font=\tiny, below=0.01cm of s2] {Reformulate and retry (max 3x)};
                 
                 \node[solution] (s3) at (0, 0) {\textbf{Query Routing}};
-                \node[font=\tiny, below=0.02cm of s3] {Skip retrieval for chit-chat};
+                \node[font=\tiny, below=0.01cm of s3] {Skip retrieval for chit-chat};
             \end{tikzpicture}
+            \end{center}
         \end{column}
     \end{columns}
     
-    \vspace{0.2cm}
+    \vspace{0.15cm}
     \begin{center}
     \begin{tikzpicture}[
-        scale=0.9,
-        box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=1.5cm, minimum height=0.5cm, align=center, font=\footnotesize},
+        scale=0.85,
+        box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=1.4cm, minimum height=0.45cm, align=center, font=\footnotesize},
         arr/.style={-{Stealth[length=2mm]}, thick}
     ]
-        % Traditional
-        \node[box=gray!20] (q1) at (0, 0.6) {Query};
-        \node[box=purple!20] (ret1) at (2.2, 0.6) {Retrieve};
-        \node[box=blue!20] (gen1) at (4.4, 0.6) {Generate};
+        % Traditional - centered at x=3
+        \node[font=\footnotesize\bfseries] at (-1.5, 0.5) {Traditional};
+        \node[box=gray!20] (q1) at (0.5, 0.5) {Query};
+        \node[box=purple!20] (ret1) at (2.5, 0.5) {Retrieve};
+        \node[box=blue!20] (gen1) at (4.5, 0.5) {Generate};
         \draw[arr] (q1) -- (ret1);
         \draw[arr] (ret1) -- (gen1);
-        \node[left=0.1cm of q1, font=\footnotesize\bfseries] {Traditional};
         
-        % Self-Reflective
-        \node[box=gray!20] (q2) at (0, -0.6) {Query};
-        \node[box=accent!30] (route) at (1.8, -0.6) {Route};
-        \node[box=purple!20] (ret2) at (3.6, -0.6) {Retrieve};
-        \node[box=secondary!30] (grade) at (5.4, -0.6) {Grade};
-        \node[box=blue!20] (gen2) at (7.2, -0.6) {Generate};
+        % Self-Reflective - centered
+        \node[font=\footnotesize\bfseries, secondary] at (-1.5, -0.7) {Self-Reflective};
+        \node[box=gray!20] (q2) at (0.5, -0.7) {Query};
+        \node[box=accent!30] (route) at (2.0, -0.7) {Route};
+        \node[box=purple!20] (ret2) at (3.5, -0.7) {Retrieve};
+        \node[box=secondary!30] (grade) at (5.0, -0.7) {Grade};
+        \node[box=blue!20] (gen2) at (6.5, -0.7) {Generate};
         \draw[arr] (q2) -- (route);
         \draw[arr] (route) -- (ret2);
         \draw[arr] (ret2) -- (grade);
         \draw[arr] (grade) -- (gen2);
-        \draw[arr, dashed, bend right=30] (grade.south) to node[below, font=\tiny] {rewrite} (ret2.south);
-        \node[left=0.1cm of q2, font=\footnotesize\bfseries, secondary] {Self-Reflective};
+        
+        % Rewrite loop - below the boxes
+        \draw[arr, dashed] (grade.south) -- ++(0, -0.35) -| node[below, font=\tiny, pos=0.25] {rewrite} (ret2.south);
     \end{tikzpicture}
     \end{center}
 \end{frame}
@@ -564,53 +570,58 @@
 \begin{frame}{Self-Reflective RAG: LangGraph Implementation}
     \begin{center}
     \begin{tikzpicture}[
-        scale=0.9,
-        node/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2cm, minimum height=0.8cm, align=center, font=\small},
-        decision/.style={diamond, draw=dark, fill=#1, minimum width=1.5cm, minimum height=1cm, align=center, font=\tiny, aspect=1.5},
+        scale=0.75,
+        transform shape,
+        node/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=1.8cm, minimum height=0.7cm, align=center, font=\small},
+        decision/.style={diamond, draw=dark, fill=#1, minimum width=1.2cm, minimum height=0.9cm, align=center, font=\tiny, aspect=1.5},
         arr/.style={-{Stealth[length=2mm]}, thick}
     ]
         % Start
         \node[node=gray!20] (query) at (0, 0) {User Query};
         
         % Route
-        \node[decision=accent!30] (route) at (3, 0) {Legal\\Query?};
+        \node[decision=accent!30] (route) at (3.5, 0) {Legal\\Query?};
         \draw[arr] (query) -- (route);
         
         % Direct generate (chit-chat)
-        \node[node=blue!15] (direct) at (3, -2.5) {Direct Answer};
+        \node[node=blue!15] (direct) at (3.5, -3) {Direct Answer};
         \draw[arr] (route) -- node[right, font=\tiny] {No} (direct);
         
         % Retrieve
-        \node[node=purple!20] (retrieve) at (6, 0) {Retrieve\\(k=10)};
+        \node[node=purple!20] (retrieve) at (7, 0) {Retrieve\\(k=10)};
         \draw[arr] (route) -- node[above, font=\tiny] {Yes} (retrieve);
         
         % Grade
-        \node[decision=secondary!30] (grade) at (9, 0) {Relevant\\Docs?};
+        \node[decision=secondary!30] (grade) at (10.5, 0) {Relevant\\Docs?};
         \draw[arr] (retrieve) -- (grade);
         
         % Generate
-        \node[node=blue!20] (generate) at (12, 0) {Generate\\Answer};
+        \node[node=blue!20] (generate) at (14, 0) {Generate\\Answer};
         \draw[arr] (grade) -- node[above, font=\tiny] {Yes} (generate);
         
         % Rewrite loop
-        \node[node=accent!20] (rewrite) at (9, -2.5) {Rewrite\\Query};
+        \node[node=accent!20] (rewrite) at (10.5, -3) {Rewrite\\Query};
         \draw[arr] (grade) -- node[right, font=\tiny] {No} (rewrite);
-        \draw[arr] (rewrite) -| node[below, font=\tiny, pos=0.25] {retry $\leq$ 3} (retrieve);
+        
+        % Rewrite back to retrieve - go around, not through
+        \draw[arr] (rewrite.west) -- ++(-0.5, 0) |- node[left, font=\tiny, pos=0.75] {retry $\leq$ 3} (retrieve.south west);
         
         % No docs found
-        \node[node=danger!20] (nodocs) at (6, -2.5) {No Info\\Available};
-        \draw[arr, dashed] (rewrite) -- node[above, font=\tiny] {max retries} (nodocs);
+        \node[node=danger!20] (nodocs) at (7, -3) {No Info\\Available};
+        \draw[arr, dashed] (rewrite) -- node[above, font=\tiny] {max} (nodocs);
         
         % Output
-        \node[node=best!30] (output) at (12, -2.5) {Response\\+ Sources};
+        \node[node=best!30] (output) at (14, -3) {Response\\+ Sources};
         \draw[arr] (generate) -- (output);
-        \draw[arr] (direct) -| (output);
-        \draw[arr] (nodocs) -| (output);
+        
+        % Connect direct and nodocs to output - go below
+        \draw[arr] (direct.south) -- ++(0, -0.5) -| (output.south west);
+        \draw[arr] (nodocs.south) -- ++(0, -0.5) -| (output.south);
         
     \end{tikzpicture}
     \end{center}
     
-    \vspace{0.2cm}
+    \vspace{0.1cm}
     \begin{center}
     \footnotesize
     \textbf{Key Features}: Query intent classification | Relevance grading | Adaptive retry | Graceful failure
@@ -651,44 +662,54 @@
         \end{column}
         
         \begin{column}{0.42\textwidth}
-            \begin{tikzpicture}[scale=0.7]
+            \begin{center}
+            \begin{tikzpicture}[scale=0.68]
                 % Relevancy chart
-                \node[font=\small\bfseries] at (2.5, 4.5) {Relevancy Score};
+                \node[font=\small\bfseries] at (2.8, 4.3) {Relevancy Score};
                 
-                \draw[->] (0, 0) -- (0, 4) node[above, font=\tiny] {};
+                \draw[->] (0, 0) -- (0, 4);
                 \draw[->] (0, 0) -- (5.5, 0);
                 
-                % Bars
-                \fill[primary!50] (0.5, 0) rectangle (1.3, 3.12);
-                \node[below, font=\tiny] at (0.9, -0.1) {T-3};
-                
-                \fill[best!70] (1.8, 0) rectangle (2.6, 3.27);
-                \node[below, font=\tiny] at (2.2, -0.1) {T-5};
-                
-                \fill[accent!50] (3.1, 0) rectangle (3.9, 3.14);
-                \node[below, font=\tiny] at (3.5, -0.1) {S-3};
-                
-                \fill[accent!40] (4.4, 0) rectangle (5.2, 3.14);
-                \node[below, font=\tiny] at (4.8, -0.1) {S-5};
-                
                 % Y-axis labels
-                \node[left, font=\tiny] at (0, 2) {0.78};
-                \node[left, font=\tiny] at (0, 3.27) {0.82};
+                \node[left, font=\tiny] at (0, 1.8) {0.78};
+                \node[left, font=\tiny] at (0, 3.2) {0.82};
+                \draw[gray!30] (0, 1.8) -- (5.2, 1.8);
+                \draw[gray!30] (0, 3.2) -- (5.2, 3.2);
                 
-                % Highlight winner
-                \draw[best, thick] (1.7, 3.27) -- (2.7, 3.27) -- (2.7, 3.5);
-                \node[font=\tiny, best, right] at (2.7, 3.5) {Best};
+                % Bars - normalized around 0.78-0.82 range
+                \fill[primary!50] (0.5, 0) rectangle (1.2, 2.2);
+                \node[below, font=\tiny] at (0.85, -0.1) {T-3};
+                \node[above, font=\tiny] at (0.85, 2.2) {.781};
+                
+                \fill[best] (1.6, 0) rectangle (2.3, 3.3);
+                \node[below, font=\tiny] at (1.95, -0.1) {T-5};
+                \node[above, font=\tiny, best] at (1.95, 3.3) {\textbf{.818}};
+                
+                \fill[accent!50] (2.7, 0) rectangle (3.4, 2.4);
+                \node[below, font=\tiny] at (3.05, -0.1) {S-3};
+                \node[above, font=\tiny] at (3.05, 2.4) {.784};
+                
+                \fill[accent!40] (3.8, 0) rectangle (4.5, 2.5);
+                \node[below, font=\tiny] at (4.15, -0.1) {S-5};
+                \node[above, font=\tiny] at (4.15, 2.5) {.785};
+                
+                % Best marker - simple arrow pointing to T-5 bar
+                \draw[best, thick, -{Stealth}] (1.95, 3.8) -- (1.95, 3.45);
+                \node[font=\tiny, best, above] at (1.95, 3.8) {Best};
             \end{tikzpicture}
+            \end{center}
             
-            \vspace{0.3cm}
+            \vspace{0.2cm}
+            \begin{center}
             \fcolorbox{secondary}{secondary!10}{
-                \parbox{0.95\textwidth}{
+                \parbox{0.9\textwidth}{
                     \centering\footnotesize
                     \textbf{Recommendation}:\\
                     Traditional RAG (k=5)\\
                     for most queries
                 }
             }
+            \end{center}
         \end{column}
     \end{columns}
 \end{frame}
@@ -697,10 +718,11 @@
 % SLIDE 11: PASS RATE ANALYSIS
 % ========================================
 \begin{frame}{Detailed Quality Analysis: Pass Rates}
-    \begin{columns}[T]
+    \begin{columns}[c]
         \begin{column}{0.48\textwidth}
+            \begin{center}
             \textbf{Pass Rate at Different Thresholds}
-            \vspace{0.2cm}
+            \vspace{0.15cm}
             
             \footnotesize
             \begin{tabular}{l|ccc}
@@ -715,7 +737,7 @@
                 \bottomrule
             \end{tabular}
             
-            \vspace{0.3cm}
+            \vspace{0.25cm}
             
             \footnotesize
             \begin{tabular}{l|ccc}
@@ -729,37 +751,37 @@
                 Trad. k=5 & 95.9 & 88.4 & 77.4 \\
                 \bottomrule
             \end{tabular}
+            \end{center}
         \end{column}
         
         \begin{column}{0.48\textwidth}
             \begin{center}
             \textbf{Interpretation}
-            \end{center}
+            \vspace{0.15cm}
             
-            \vspace{0.2cm}
             \begin{tikzpicture}[
-                insight/.style={rectangle, draw=#1, fill=#1!10, rounded corners, minimum width=4.5cm, minimum height=0.6cm, align=center, font=\footnotesize}
+                insight/.style={rectangle, draw=#1, fill=#1!10, rounded corners, minimum width=4.2cm, minimum height=0.55cm, align=center, font=\footnotesize}
             ]
-                \node[insight=best] (i1) at (0, 2.5) {86\% relevancy $\geq$ 0.5};
-                \node[insight=secondary] (i2) at (0, 1.5) {96\% faithfulness $\geq$ 0.5};
-                \node[insight=primary] (i3) at (0, 0.5) {Faithfulness $>$ Relevancy};
+                \node[insight=best] (i1) at (0, 2.2) {86\% relevancy $\geq$ 0.5};
+                \node[insight=secondary] (i2) at (0, 1.3) {96\% faithfulness $\geq$ 0.5};
+                \node[insight=primary] (i3) at (0, 0.4) {Faithfulness $>$ Relevancy};
             \end{tikzpicture}
             
-            \vspace{0.3cm}
+            \vspace{0.25cm}
             \fcolorbox{accent}{accent!10}{
-                \parbox{0.95\textwidth}{
+                \parbox{0.9\textwidth}{
                     \centering\footnotesize
                     \textbf{High Faithfulness} (96\%)\\
-                    = Low Hallucination Risk\\[0.1cm]
+                    = Low Hallucination Risk\\[0.05cm]
                     Critical for legal domain
                 }
             }
             
-            \vspace{0.3cm}
+            \vspace{0.2cm}
             \footnotesize
             \textbf{Evaluation Method}:\\
-            LLM-as-Judge (Gemini)\\
-            DeepEval framework
+            LLM-as-Judge (Gemini) | DeepEval
+            \end{center}
         \end{column}
     \end{columns}
 \end{frame}
@@ -851,9 +873,11 @@
     \end{center}
     
     \vspace{0.15cm}
-    \begin{columns}[T]
+    \begin{columns}[c]
         \begin{column}{0.48\textwidth}
+            \begin{center}
             \textbf{Key Design Decisions}
+            \end{center}
             \begin{itemize}
                 \setlength\itemsep{0.1em}
                 \item[\checkmark] \footnotesize Qdrant: native hybrid search
@@ -862,7 +886,9 @@
             \end{itemize}
         \end{column}
         \begin{column}{0.48\textwidth}
+            \begin{center}
             \textbf{Performance}
+            \end{center}
             \begin{itemize}
                 \setlength\itemsep{0.1em}
                 \item[\checkmark] \footnotesize Retrieval: 0.13s per query
@@ -927,37 +953,41 @@
 % SLIDE 15: LIMITATIONS & FUTURE WORK
 % ========================================
 \begin{frame}{Limitations \& Future Directions}
-    \begin{columns}[T]
+    \begin{columns}[c]
         \begin{column}{0.48\textwidth}
+            \begin{center}
             \textbf{Current Limitations}
-            \vspace{0.2cm}
+            \vspace{0.15cm}
             
             \begin{tikzpicture}[
-                limit/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4.5cm, minimum height=0.5cm, align=left, font=\footnotesize}
+                limit/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4.3cm, minimum height=0.5cm, align=center, font=\footnotesize}
             ]
                 \node[limit] (l1) at (0, 2.4) {Evaluation set: 150 queries};
                 \node[limit] (l2) at (0, 1.6) {No Vietnamese legal LLM};
                 \node[limit] (l3) at (0, 0.8) {Single-hop reasoning only};
                 \node[limit] (l4) at (0, 0) {No temporal awareness};
             \end{tikzpicture}
+            \end{center}
         \end{column}
         
         \begin{column}{0.48\textwidth}
+            \begin{center}
             \textbf{Future Directions}
-            \vspace{0.2cm}
+            \vspace{0.15cm}
             
             \begin{tikzpicture}[
-                future/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.5cm, minimum height=0.5cm, align=left, font=\footnotesize}
+                future/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.3cm, minimum height=0.5cm, align=center, font=\footnotesize}
             ]
                 \node[future] (f1) at (0, 2.4) {Expand benchmark};
                 \node[future] (f2) at (0, 1.6) {Fine-tune legal embedding};
                 \node[future] (f3) at (0, 0.8) {Multi-hop reasoning};
                 \node[future] (f4) at (0, 0) {Temporal document filtering};
             \end{tikzpicture}
+            \end{center}
         \end{column}
     \end{columns}
     
-    \vspace{0.5cm}
+    \vspace{0.4cm}
     \begin{center}
     \fcolorbox{primary}{primary!10}{
         \parbox{0.8\textwidth}{
@@ -977,10 +1007,12 @@
         \Large\textbf{ViLeXa} - Vietnamese Legal eXpert Assistant
     \end{center}
     
-    \vspace{0.3cm}
-    \begin{columns}[T]
+    \vspace{0.25cm}
+    \begin{columns}[c]
         \begin{column}{0.48\textwidth}
+            \begin{center}
             \textbf{Technical Contributions}
+            \end{center}
             \begin{enumerate}
                 \item Hierarchical chunking preserving legal structure
                 \item Systematic embedding evaluation (+33\% improvement)
@@ -989,7 +1021,9 @@
         \end{column}
         
         \begin{column}{0.48\textwidth}
+            \begin{center}
             \textbf{Practical Outcomes}
+            \end{center}
             \begin{enumerate}
                 \item End-to-end legal QA system
                 \item Evidence-based configuration
@@ -998,10 +1032,10 @@
         \end{column}
     \end{columns}
     
-    \vspace{0.5cm}
+    \vspace{0.4cm}
     \begin{center}
     \begin{tikzpicture}
-        \node[rectangle, draw=best, fill=best!15, rounded corners, minimum width=10cm, minimum height=1.2cm] {
+        \node[rectangle, draw=best, fill=best!15, rounded corners, minimum width=10cm, minimum height=1.1cm] {
             \begin{tabular}{cccc}
                 \textbf{Hit@1} & \textbf{Relevancy} & \textbf{Faithfulness} & \textbf{Latency} \\
                 77.3\% & 0.818 & 0.913 & 3.05s
