@@ -271,15 +271,44 @@
 % SLIDE 5: DATA PREPARATION
 % ========================================
 \begin{frame}{Data Preparation: Collection Pipeline}
-    \begin{center}
-        \vspace{0.5cm}
-        % Placeholder - replace with actual image
-        \includegraphics[width=0.85\textwidth]{data_preparation.jpeg}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \vspace{0.1cm}
+            \includegraphics[width=\textwidth]{data_preparation.jpeg}
+        \end{column}
         
-        % \vspace{0.3cm}
-        % \footnotesize
-        % \textcolor{gray}{Web Crawler $\rightarrow$ HTML Parser $\rightarrow$ Text Extraction $\rightarrow$ JSON Storage}
-    \end{center}
+        \begin{column}{0.43\textwidth}
+            \textbf{Two-Stage Process}
+            \vspace{0.15cm}
+            
+            \footnotesize
+            \textbf{1. Document Discovery}
+            \begin{itemize}
+                \setlength\itemsep{0.02em}
+                \item[\tiny$\bullet$] \tiny Iterate document types (IDs 15-23)
+                \item[\tiny$\bullet$] \tiny Pagination to find target URLs
+            \end{itemize}
+            
+            \vspace{0.15cm}
+            \textbf{2. Content Extraction}
+            \begin{itemize}
+                \setlength\itemsep{0.02em}
+                \item[\tiny$\bullet$] \tiny BeautifulSoup parses HTML
+                \item[\tiny$\bullet$] \tiny Strip tags $\rightarrow$ clean text
+                \item[\tiny$\bullet$] \tiny Save as JSON (id + content)
+            \end{itemize}
+            
+            \vspace{0.2cm}
+            \fcolorbox{secondary}{secondary!10}{
+                \parbox{0.95\textwidth}{
+                    \centering\tiny
+                    \textbf{Respectful Scraping}\\
+                    2s delay | Retry w/ backoff\\
+                    Filter expired docs
+                }
+            }
+        \end{column}
+    \end{columns}
 \end{frame}
 
 % ========================================
