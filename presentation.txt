@@ -111,7 +111,7 @@
 % ========================================
 % SLIDE 3: RELATED WORK
 % ========================================
-\begin{frame}{Related Work}
+\begin{frame}{Related Works}
     \begin{center}
     \begin{columns}[T,onlytextwidth]
         \begin{column}{0.48\textwidth}
@@ -224,7 +224,7 @@
         
         % RAG Pipeline box - wider and more spaced
         \node[box=accent!15, minimum width=7.5cm, minimum height=2cm] (ragbox) at (4.5, -0.7) {};
-        \node[font=\footnotesize\bfseries] at (4.5, 0.15) {RAG Pipeline};
+        \node[font=\footnotesize\bfseries] at (4.5, -0.1) {RAG Pipeline};
         
         % Inside RAG - more spacing between components, moved down
         \node[box=purple!20, minimum width=1.1cm, font=\tiny] (route) at (2, -1) {Route};
@@ -235,18 +235,19 @@
         \draw[-{Stealth[length=1.5mm]}, dark] (route) -- (retr);
         \draw[-{Stealth[length=1.5mm]}, dark] (retr) -- (grade);
         \draw[-{Stealth[length=1.5mm]}, dark] (grade) -- (gen);
+        \draw[arr=secondary, dashed] (grade.south) -- ++(0, -1.1) -- ++(-1.7, 0) --(retr.south)
         
         % User connections
-        \draw[arr=secondary] (user) -- (fe);
-        \draw[arr=secondary] (fe) -- (be);
+        \draw[arr=secondary, <->] (user) -- (fe);
+        \draw[arr=secondary, <->] (fe) -- (be);
         \draw[arr=secondary] (be) -- (route);
         
         % Qdrant to Retrieve - goes down then right to Retrieve
-        \draw[arr=secondary, dashed] (qdrant.south) -- ++(0, -1.1) -| (retr.north);
+        \draw[arr=secondary, dashed] (qdrant.south) -- ++(0, -2.1) -| (retr.north);
         
         % LLM connection - positioned to the right, below Generate
-        \node[db=accent!20] (llm) at (7.1, -3.2) {Gemini LLM};
-        \draw[arr=secondary, dashed] (gen.south) -- (llm.north);
+        % \node[db=accent!20] (llm) at (7.1, -3.2) {Gemini LLM};
+        % \draw[arr=secondary, dashed] (llm.north) -- (gen.south);
         
         % Database
         \node[db=gray!20] (sqlite) at (-2, -3.2) {SQLite};
@@ -254,7 +255,7 @@
         \node[below=0.05cm of sqlite, font=\tiny] {Sessions};
         
         % Response arrow - goes far right then up HIGH above top row, then back to React UI
-        \draw[arr=secondary] (gen.east) -- ++(1.0, 0) -- ++(0, 2.0) -| (fe.north);
+        \draw[arr=secondary] (gen.east) -- ++(1.0, 0) -- ++(0, 2.0) -| (be.north);
         
     \end{tikzpicture}
     \end{center}
@@ -1043,8 +1044,7 @@
             ]
                 \node[limit] (l1) at (0, 2.4) {Evaluation set: 150 queries};
                 \node[limit] (l2) at (0, 1.6) {No real benchmark};
-                \node[limit] (l3) at (0, 0.8) {Limit infrastructure};
-                \node[limit] (l4) at (0, 0) {Manual Data Pipeliine};
+                \node[limit] (l3) at (0, 0.8) {Manual Data Pipeline};
             \end{tikzpicture}
             \end{center}
         \end{column}
@@ -1081,46 +1081,29 @@
 % SLIDE 16: CONCLUSION
 % ========================================
 \begin{frame}{Conclusion}
-    \begin{center}
-        \Large\textbf{ViLeXa} - Vietnamese Legal eXpert Assistant
-    \end{center}
+    \vspace{0.2cm}
     
-    \vspace{0.25cm}
-    \begin{columns}[c]
-        \begin{column}{0.48\textwidth}
-            \begin{center}
-            \textbf{Technical Contributions}
-            \end{center}
-            \begin{enumerate}
-                \item Hierarchical chunking preserving legal structure
-                \item Systematic embedding evaluation (+33\% improvement)
-                \item Self-reflective RAG with LangGraph
-            \end{enumerate}
-        \end{column}
-        
-        \begin{column}{0.48\textwidth}
-            \begin{center}
-            \textbf{Practical Outcomes}
-            \end{center}
-            \begin{enumerate}
-                \item End-to-end legal QA system
-                \item Evidence-based configuration
-                \item 96\% low-hallucination responses
-            \end{enumerate}
-        \end{column}
-    \end{columns}
+    % Insight 1: Embeddings
+    \begin{block}{\textbf{1. Domain Specificity Over General Complexity}}
+        Experiments confirm that \textbf{fine-tuned dense embeddings} (Vietnamese-Embedding-v2) significantly outperform complex multilingual hybrid architectures for the Vietnamese legal domain.
+    \end{block}
     
-    \vspace{0.4cm}
-    \begin{center}
-    \begin{tikzpicture}
-        \node[rectangle, draw=best, fill=best!15, rounded corners, minimum width=10cm, minimum height=1.1cm] {
-            \begin{tabular}{cccc}
-                \textbf{Hit@1} & \textbf{Relevancy} & \textbf{Faithfulness} & \textbf{Latency} \\
-                77.3\% & 0.818 & 0.913 & 3.05s
-            \end{tabular}
-        };
-    \end{tikzpicture}
-    \end{center}
+    \vspace{0.2cm}
+    
+    % Insight 2: Architecture
+    \begin{block}{\textbf{2. The Trade-off: Efficiency vs. Adaptability}}
+        \begin{itemize}
+            \item \textbf{Traditional RAG:} Superior speed and raw metrics (Relevancy 0.818).
+            \item \textbf{Self-Reflective RAG:} Essential for "human-like" robustness (handling chit-chat, ambiguity), despite the latency cost.
+        \end{itemize}
+    \end{block}
+    
+    \vspace{0.2cm}
+    
+    % Final Summary
+    {\textbf{Final Verdict:}}
+        ViLeXa demonstrates that the future of autonomous legal assistants lies in a hybrid approach: combining \textbf{high-speed, domain-specific retrieval} with the \textbf{adaptive reasoning} of agentic workflows.
+    
 \end{frame}
 
 % ========================================
