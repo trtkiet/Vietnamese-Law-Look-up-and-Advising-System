@@ -15,4 +15,5 @@ dependencies = [
     "FlagEmbedding>=1.2.0",
     "deepeval>=2.0.0",
     "langgraph>=0.2.0",
+    "tiktoken>=0.7.0",
 ]
